@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "controlling-cockpit"
+version = "1.0.0"
+description = "Budget vs. Actual controlling cockpit: synthetic GL data, DuckDB warehouse, data quality checks, Excel reconciliation and a Power BI semantic model."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.11"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "SIM", "D"]
+ignore = ["D203", "D213", "D107"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["D100", "D103", "D401"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

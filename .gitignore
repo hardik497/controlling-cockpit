@@ -1,0 +1,38 @@
+# --- Python -------------------------------------------------------------------------
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# --- Generated data -----------------------------------------------------------------
+# Raw transaction data is fully reproducible via `make data` (fixed seed) – not committed.
+data/raw/gl_actuals.csv
+data/raw/budget.csv
+data/raw/forecast.csv
+data/raw/_injected_issues.json
+# The DuckDB warehouse is rebuilt by `make build`.
+data/*.duckdb
+data/*.duckdb.wal
+# Committed on purpose so the repo works right after cloning (small files):
+#   data/raw/chart_of_accounts.csv, data/raw/cost_centres.csv
+#   data/sample/gl_actuals_sample.csv   (first 500 ledger rows, for a quick look)
+#   data/model/*.csv, *.parquet          (star schema for Power BI, ~1 MB)
+#   excel/controlling_reconciliation.xlsx
+
+# --- Power BI (per Microsoft PBIP guidance) -----------------------------------------
+**/.pbi/localSettings.json
+**/.pbi/cache.abf
+*.pbix.bak
+
+# --- Excel / OS / editors -----------------------------------------------------------
+~$*.xlsx
+.DS_Store
+.idea/
+.vscode/
+*.swp
