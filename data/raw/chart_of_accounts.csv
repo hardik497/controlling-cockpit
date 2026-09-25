@@ -1,0 +1,33 @@
+account_code,account_name,pnl_group,pnl_category,pnl_group_sort,sign
+4000,Product Revenue,Revenue,Revenue,1,1
+4010,Service Revenue,Revenue,Revenue,1,1
+4020,Licence Revenue,Revenue,Revenue,1,1
+4090,Other Operating Income,Revenue,Revenue,1,1
+5000,Material Costs,Cost of Goods Sold,Cost of Goods Sold,2,-1
+5010,Purchased Services,Cost of Goods Sold,Cost of Goods Sold,2,-1
+5020,Freight & Logistics,Cost of Goods Sold,Cost of Goods Sold,2,-1
+6000,Salaries & Wages,Personnel Costs,Operating Expenses,3,-1
+6010,Social Security,Personnel Costs,Operating Expenses,3,-1
+6020,Bonuses,Personnel Costs,Operating Expenses,3,-1
+6030,Training,Personnel Costs,Operating Expenses,3,-1
+6040,Temporary Staff,Personnel Costs,Operating Expenses,3,-1
+6100,Advertising,Marketing,Operating Expenses,4,-1
+6110,Trade Fairs & Events,Marketing,Operating Expenses,4,-1
+6120,Agency Fees,Marketing,Operating Expenses,4,-1
+6130,Digital Marketing,Marketing,Operating Expenses,4,-1
+6200,Software Licences,IT,Operating Expenses,5,-1
+6210,Hardware,IT,Operating Expenses,5,-1
+6220,Cloud Hosting,IT,Operating Expenses,5,-1
+6230,IT Services,IT,Operating Expenses,5,-1
+6300,Office Rent,Rent,Operating Expenses,6,-1
+6310,Utilities,Rent,Operating Expenses,6,-1
+6320,Facility Management,Rent,Operating Expenses,6,-1
+6400,Travel Expenses,Travel,Operating Expenses,7,-1
+6410,Accommodation,Travel,Operating Expenses,7,-1
+6420,Entertainment,Travel,Operating Expenses,7,-1
+6500,Depreciation Equipment,Depreciation,Operating Expenses,8,-1
+6510,Amortisation Software,Depreciation,Operating Expenses,8,-1
+6600,Legal & Consulting,Other OpEx,Operating Expenses,9,-1
+6610,Insurance,Other OpEx,Operating Expenses,9,-1
+6620,Bank Fees,Other OpEx,Operating Expenses,9,-1
+6630,Office Supplies,Other OpEx,Operating Expenses,9,-1
