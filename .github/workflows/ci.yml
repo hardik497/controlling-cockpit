@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  pipeline:
+    name: Pipeline & tests (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Set up environment
+        run: make setup
+
+      - name: Lint (ruff)
+        run: make lint
+
+      - name: Run full pipeline
+        run: make all
+
+      - name: Run tests
+        run: make test
+
+      - name: Generated files are committed and up to date
+        run: git diff --exit-code -- powerbi/ data/raw/chart_of_accounts.csv data/raw/cost_centres.csv
+
+      - name: Upload Excel workbook
+        if: matrix.python-version == '3.11'
+        uses: actions/upload-artifact@v4
+        with:
+          name: controlling_reconciliation
+          path: excel/controlling_reconciliation.xlsx
