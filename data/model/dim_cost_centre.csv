@@ -1,0 +1,9 @@
+cost_centre_key,cost_centre_code,cost_centre_name,cost_centre_label,department,region,manager
+1,CC100,Sales DACH,CC100 Sales DACH,Sales,DACH,Anna Keller
+2,CC110,Sales Benelux,CC110 Sales Benelux,Sales,Benelux,Pieter de Vries
+3,CC120,Sales Nordics,CC120 Sales Nordics,Sales,Nordics,Ingrid Lindqvist
+4,CC200,Operations DACH,CC200 Operations DACH,Operations,DACH,Markus Brandt
+5,CC210,Operations Nordics,CC210 Operations Nordics,Operations,Nordics,Erik Johansson
+6,CC300,Marketing DACH,CC300 Marketing DACH,Marketing,DACH,Julia Hoffmann
+7,CC310,Marketing Benelux,CC310 Marketing Benelux,Marketing,Benelux,Sanne Jansen
+8,CC400,Administration,CC400 Administration,Administration,DACH,Thomas Wagner

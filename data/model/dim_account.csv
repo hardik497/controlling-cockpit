@@ -1,0 +1,33 @@
+account_key,account_code,account_name,account_label,pnl_group,pnl_group_sort,pnl_category,pnl_category_sort,sign,account_type
+1,4000,Product Revenue,4000 Product Revenue,Revenue,1,Revenue,1,1,Income
+2,4010,Service Revenue,4010 Service Revenue,Revenue,1,Revenue,1,1,Income
+3,4020,Licence Revenue,4020 Licence Revenue,Revenue,1,Revenue,1,1,Income
+4,4090,Other Operating Income,4090 Other Operating Income,Revenue,1,Revenue,1,1,Income
+5,5000,Material Costs,5000 Material Costs,Cost of Goods Sold,2,Cost of Goods Sold,2,-1,Expense
+6,5010,Purchased Services,5010 Purchased Services,Cost of Goods Sold,2,Cost of Goods Sold,2,-1,Expense
+7,5020,Freight & Logistics,5020 Freight & Logistics,Cost of Goods Sold,2,Cost of Goods Sold,2,-1,Expense
+8,6000,Salaries & Wages,6000 Salaries & Wages,Personnel Costs,3,Operating Expenses,3,-1,Expense
+9,6010,Social Security,6010 Social Security,Personnel Costs,3,Operating Expenses,3,-1,Expense
+10,6020,Bonuses,6020 Bonuses,Personnel Costs,3,Operating Expenses,3,-1,Expense
+11,6030,Training,6030 Training,Personnel Costs,3,Operating Expenses,3,-1,Expense
+12,6040,Temporary Staff,6040 Temporary Staff,Personnel Costs,3,Operating Expenses,3,-1,Expense
+13,6100,Advertising,6100 Advertising,Marketing,4,Operating Expenses,3,-1,Expense
+14,6110,Trade Fairs & Events,6110 Trade Fairs & Events,Marketing,4,Operating Expenses,3,-1,Expense
+15,6120,Agency Fees,6120 Agency Fees,Marketing,4,Operating Expenses,3,-1,Expense
+16,6130,Digital Marketing,6130 Digital Marketing,Marketing,4,Operating Expenses,3,-1,Expense
+17,6200,Software Licences,6200 Software Licences,IT,5,Operating Expenses,3,-1,Expense
+18,6210,Hardware,6210 Hardware,IT,5,Operating Expenses,3,-1,Expense
+19,6220,Cloud Hosting,6220 Cloud Hosting,IT,5,Operating Expenses,3,-1,Expense
+20,6230,IT Services,6230 IT Services,IT,5,Operating Expenses,3,-1,Expense
+21,6300,Office Rent,6300 Office Rent,Rent,6,Operating Expenses,3,-1,Expense
+22,6310,Utilities,6310 Utilities,Rent,6,Operating Expenses,3,-1,Expense
+23,6320,Facility Management,6320 Facility Management,Rent,6,Operating Expenses,3,-1,Expense
+24,6400,Travel Expenses,6400 Travel Expenses,Travel,7,Operating Expenses,3,-1,Expense
+25,6410,Accommodation,6410 Accommodation,Travel,7,Operating Expenses,3,-1,Expense
+26,6420,Entertainment,6420 Entertainment,Travel,7,Operating Expenses,3,-1,Expense
+27,6500,Depreciation Equipment,6500 Depreciation Equipment,Depreciation,8,Operating Expenses,3,-1,Expense
+28,6510,Amortisation Software,6510 Amortisation Software,Depreciation,8,Operating Expenses,3,-1,Expense
+29,6600,Legal & Consulting,6600 Legal & Consulting,Other OpEx,9,Operating Expenses,3,-1,Expense
+30,6610,Insurance,6610 Insurance,Other OpEx,9,Operating Expenses,3,-1,Expense
+31,6620,Bank Fees,6620 Bank Fees,Other OpEx,9,Operating Expenses,3,-1,Expense
+32,6630,Office Supplies,6630 Office Supplies,Other OpEx,9,Operating Expenses,3,-1,Expense

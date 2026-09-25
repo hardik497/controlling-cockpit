@@ -1,0 +1,20 @@
+check_id,check_name,check_category,source_table,severity,rows_checked,rows_affected,pct_affected,amount_affected,status,sample_keys,description,checked_at
+DQ01,gl_duplicate_booking,Duplicates,stg_gl_actuals,ERROR,49802,300,0.602,2707271.12,FAIL,"JE0049503, JE0049504, JE0049505, JE0049506, JE0049507","Same document_ref, account and amount posted more than once; later entry_id is the duplicate",2026-09-25 12:17:31
+DQ02,gl_missing_cost_centre,Mandatory fields,stg_gl_actuals,ERROR,49802,200,0.402,1471718.67,FAIL,"JE0000051, JE0000132, JE0000158, JE0000419, JE0000788",Cost centre is NULL or empty,2026-09-25 12:17:31
+DQ04,gl_unknown_account,Orphan keys,stg_gl_actuals,ERROR,49802,200,0.402,1289918.61,FAIL,"JE0000586, JE0000661, JE0000703, JE0000911, JE0001531",Account code does not exist in the chart of accounts,2026-09-25 12:17:31
+DQ06,gl_revenue_negative_sign,Sign plausibility,stg_gl_actuals,ERROR,49802,150,0.301,-1518735.10,FAIL,"JE0000811, JE0000814, JE0000865, JE0000989, JE0001894",Revenue posted with a negative amount (natural sign of revenue is positive),2026-09-25 12:17:31
+DQ08,gl_invalid_period,Period validity,stg_gl_actuals,ERROR,49802,150,0.301,1065466.38,FAIL,"JE0000027, JE0000098, JE0000425, JE0000709, JE0001906",Period outside FY2023-FY2025 or not matching the month of the posting date,2026-09-25 12:17:31
+DQ03,gl_null_mandatory_fields,Mandatory fields,stg_gl_actuals,ERROR,49802,0,0.0,0.00,PASS,,"entry_id, posting_date, period, account_code or amount is NULL",2026-09-25 12:17:31
+DQ05,gl_unknown_cost_centre,Orphan keys,stg_gl_actuals,ERROR,49802,0,0.0,0.00,PASS,,Cost centre code does not exist in the cost-centre master,2026-09-25 12:17:31
+DQ07,gl_cost_negative_sign,Sign plausibility,stg_gl_actuals,WARNING,49802,0,0.0,0.00,PASS,,"Cost posted with a negative amount – may be a legitimate credit note, review",2026-09-25 12:17:31
+DQ09,gl_foreign_currency,Consistency,stg_gl_actuals,ERROR,49802,0,0.0,0.00,PASS,,Currency is not EUR (no FX conversion implemented),2026-09-25 12:17:31
+DQ10,budget_orphan_keys,Orphan keys,stg_budget,ERROR,5592,0,0.0,0.00,PASS,,Budget line references an unknown account or cost centre,2026-09-25 12:17:31
+DQ11,budget_duplicate_grain,Duplicates,stg_budget,ERROR,5592,0,0.0,0.00,PASS,,"More than one budget line per period, account and cost centre",2026-09-25 12:17:31
+DQ12,budget_invalid_period,Period validity,stg_budget,ERROR,5592,0,0.0,0.00,PASS,,Budget period outside FY2023-FY2025,2026-09-25 12:17:31
+DQ13,forecast_orphan_keys,Orphan keys,stg_forecast,ERROR,5592,0,0.0,0.00,PASS,,Forecast line references an unknown account or cost centre,2026-09-25 12:17:31
+DQ14,forecast_duplicate_grain,Duplicates,stg_forecast,ERROR,5592,0,0.0,0.00,PASS,,"More than one forecast line per period, account and cost centre",2026-09-25 12:17:31
+DQ15,forecast_invalid_period,Period validity,stg_forecast,ERROR,5592,0,0.0,0.00,PASS,,Forecast period outside FY2023-FY2025,2026-09-25 12:17:31
+DQ16,gl_control_total_preload,Reconciliation,stg_gl_actuals,ERROR,49802,0,0.0,0.00,PASS,staged=364734948.64 clean=359719308.96 flagged=5015639.68,Staged ledger total equals clean total plus flagged (to-be-quarantined) total,2026-09-25 12:17:31
+DQ17,fact_vs_ledger_amount_reconciliation,Reconciliation,fact_finance,ERROR,49802,0,0.0,0.00,PASS,ledger=364734948.64 fact=359719308.96 rejected=5015639.68,Ledger total equals loaded Actual plus quarantined Actual,2026-09-25 12:17:31
+DQ18,fact_vs_ledger_row_reconciliation,Reconciliation,fact_finance,ERROR,49802,0,0.0,0.00,PASS,ledger_rows=49802 fact_lines=48802 rejected_rows=1000,Every ledger row is either loaded (line_count) or quarantined,2026-09-25 12:17:31
+DQ19,fact_vs_budget_amount_reconciliation,Reconciliation,fact_finance,ERROR,5592,0,0.0,0.00,PASS,budget=360740000.20 fact=360740000.20,Budget file total equals loaded Budget plus quarantined Budget,2026-09-25 12:17:31

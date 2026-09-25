@@ -1,0 +1,4 @@
+scenario_key,scenario,scenario_sort,description
+1,Actual,1,Booked general-ledger actuals after data-quality checks
+2,Budget,2,"Approved annual budget, phased monthly"
+3,Forecast,3,Latest rolling forecast
