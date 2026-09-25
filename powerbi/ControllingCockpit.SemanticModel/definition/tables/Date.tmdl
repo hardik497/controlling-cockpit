@@ -1,0 +1,196 @@
+/// Daily calendar 2023-01-01 to 2025-12-31. Fiscal year = calendar year. Marked as date table.
+table Date
+	lineageTag: 414761a9-e9a9-58bf-8bf0-445fccdb230c
+	dataCategory: Time
+
+	column 'Date Key'
+		dataType: int64
+		isHidden
+		lineageTag: 3e320e71-14f5-5669-8f3a-0d124538f1d9
+		summarizeBy: none
+		sourceColumn: Date Key
+
+	column Date
+		dataType: dateTime
+		isKey
+		formatString: yyyy-mm-dd
+		lineageTag: 75ca8acb-bdd0-58b3-bbeb-2f3c03644b12
+		summarizeBy: none
+		sourceColumn: Date
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column 'Fiscal Year'
+		dataType: int64
+		formatString: 0
+		lineageTag: 5ac52763-1d8f-5a58-9e8e-9840a57158c3
+		summarizeBy: none
+		sourceColumn: Fiscal Year
+
+	column 'Fiscal Year Label'
+		dataType: string
+		lineageTag: 5e3ea1de-c2d7-5c70-bccb-f64e255529be
+		summarizeBy: none
+		sourceColumn: Fiscal Year Label
+		sortByColumn: 'Fiscal Year'
+
+	column 'Fiscal Quarter'
+		dataType: int64
+		isHidden
+		lineageTag: 83892e57-a048-52b6-b9a1-4ce04d1af918
+		summarizeBy: none
+		sourceColumn: Fiscal Quarter
+
+	column Quarter
+		dataType: string
+		lineageTag: 35f7ff7f-607f-5274-aba4-e25f24f3f6ea
+		summarizeBy: none
+		sourceColumn: Quarter
+		sortByColumn: 'Fiscal Quarter'
+
+	column 'Year Quarter'
+		dataType: string
+		lineageTag: 6bc93147-e5db-55bd-8e45-28583b6df748
+		summarizeBy: none
+		sourceColumn: Year Quarter
+
+	column 'Month Number'
+		dataType: int64
+		isHidden
+		lineageTag: f055f055-4a82-5c9f-b322-6bb2da5c4b63
+		summarizeBy: none
+		sourceColumn: Month Number
+
+	column Month
+		dataType: string
+		lineageTag: b2e6173f-0410-5ab1-94fb-1e8e455aa4e1
+		summarizeBy: none
+		sourceColumn: Month
+		sortByColumn: 'Month Number'
+
+	column 'Month Short'
+		dataType: string
+		lineageTag: 14e2527b-718f-5c0c-b7a8-c8aa33a1997b
+		summarizeBy: none
+		sourceColumn: Month Short
+		sortByColumn: 'Month Number'
+
+	/// Fiscal period YYYY-MM.
+	column Period
+		dataType: string
+		lineageTag: 134cce6e-f402-5129-8898-59a9a7a42660
+		summarizeBy: none
+		sourceColumn: Period
+		sortByColumn: 'Period Sort'
+
+	column 'Period Sort'
+		dataType: int64
+		isHidden
+		lineageTag: 92a4c56d-9c84-5fd2-be79-f0a90acf440e
+		summarizeBy: none
+		sourceColumn: Period Sort
+
+	column 'Month Start'
+		dataType: dateTime
+		formatString: yyyy-mm-dd
+		lineageTag: 30cf0f2c-e6b2-5baf-abac-41d6449953c3
+		summarizeBy: none
+		sourceColumn: Month Start
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column 'Day of Month'
+		dataType: int64
+		isHidden
+		lineageTag: bc40cabf-1453-5208-abc1-1bf0553ac5ae
+		summarizeBy: none
+		sourceColumn: Day of Month
+
+	column Weekday
+		dataType: string
+		isHidden
+		lineageTag: 7dddb771-07e5-5116-b383-93ab01786c2a
+		summarizeBy: none
+		sourceColumn: Weekday
+		sortByColumn: 'Weekday Number'
+
+	column 'Weekday Number'
+		dataType: int64
+		isHidden
+		lineageTag: d3eca45d-c3c6-566d-b2cf-f2c9823c5d17
+		summarizeBy: none
+		sourceColumn: Weekday Number
+
+	column 'Is Weekend'
+		dataType: boolean
+		isHidden
+		lineageTag: 8ba1e443-d42d-5e78-98c7-fadcad739e26
+		summarizeBy: none
+		sourceColumn: Is Weekend
+
+	hierarchy 'Fiscal Calendar'
+		lineageTag: 2498baa3-3eeb-59f5-b444-5213a7409641
+
+		level Year
+			lineageTag: f3d69876-65fc-53cd-bfd3-e0d93cac9fde
+			column: 'Fiscal Year Label'
+
+		level Quarter
+			lineageTag: a2b12cf4-5483-574d-9bd7-accb3e836143
+			column: Quarter
+
+		level Month
+			lineageTag: 7a0eac26-8b68-5db4-8403-6da73ee975e5
+			column: 'Month Short'
+
+	partition Date = m
+		mode: import
+		source =
+				let
+					Source = Csv.Document(File.Contents(DataFolder & "dim_date.csv"), [Delimiter = ",", Encoding = 65001, QuoteStyle = QuoteStyle.Csv]),
+					Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars = true]),
+					// empty CSV fields -> null, so typed conversion does not raise errors
+					Nulls = Table.TransformColumns(Promoted, List.Transform(Table.ColumnNames(Promoted), each {_, (v) => if v = "" then null else v})),
+					// en-US culture: decimal point is '.', independent of the Windows locale
+					Typed = Table.TransformColumnTypes(Nulls, {
+						{"date_key", Int64.Type},
+						{"date", type datetime},
+						{"fiscal_year", Int64.Type},
+						{"fiscal_year_label", type text},
+						{"fiscal_quarter", Int64.Type},
+						{"fiscal_quarter_label", type text},
+						{"year_quarter", type text},
+						{"month_number", Int64.Type},
+						{"month_name", type text},
+						{"month_short", type text},
+						{"period", type text},
+						{"period_sort", Int64.Type},
+						{"month_start", type datetime},
+						{"day_of_month", Int64.Type},
+						{"weekday_name", type text},
+						{"weekday_number", Int64.Type},
+						{"is_weekend", type logical}
+					}, "en-US"),
+					Renamed = Table.RenameColumns(Typed, {
+						{"date_key", "Date Key"},
+						{"date", "Date"},
+						{"fiscal_year", "Fiscal Year"},
+						{"fiscal_year_label", "Fiscal Year Label"},
+						{"fiscal_quarter", "Fiscal Quarter"},
+						{"fiscal_quarter_label", "Quarter"},
+						{"year_quarter", "Year Quarter"},
+						{"month_number", "Month Number"},
+						{"month_name", "Month"},
+						{"month_short", "Month Short"},
+						{"period", "Period"},
+						{"period_sort", "Period Sort"},
+						{"month_start", "Month Start"},
+						{"day_of_month", "Day of Month"},
+						{"weekday_name", "Weekday"},
+						{"weekday_number", "Weekday Number"},
+						{"is_weekend", "Is Weekend"}
+					})
+				in
+					Renamed
+
+	annotation PBI_ResultType = Table

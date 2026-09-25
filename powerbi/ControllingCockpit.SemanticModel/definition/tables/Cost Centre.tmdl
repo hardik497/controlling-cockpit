@@ -1,0 +1,90 @@
+/// Cost centres with department, region and responsible manager.
+table 'Cost Centre'
+	lineageTag: 12e09f6f-6073-5eac-bc39-121f712e815f
+
+	column 'Cost Centre Key'
+		dataType: int64
+		isHidden
+		lineageTag: 6d8437bc-87f2-527b-97e7-a1977e2c91e8
+		summarizeBy: none
+		sourceColumn: Cost Centre Key
+
+	column 'Cost Centre Code'
+		dataType: string
+		lineageTag: 905a7a59-c8cd-5d9f-99ac-c6e773769196
+		summarizeBy: none
+		sourceColumn: Cost Centre Code
+
+	column 'Cost Centre Name'
+		dataType: string
+		lineageTag: 0dc514c9-035d-5a6c-aa28-a4d0879b439c
+		summarizeBy: none
+		sourceColumn: Cost Centre Name
+
+	column 'Cost Centre'
+		dataType: string
+		lineageTag: 97af8a13-522a-591e-8fe9-736d331a9fc8
+		summarizeBy: none
+		sourceColumn: Cost Centre
+		sortByColumn: 'Cost Centre Code'
+
+	column Department
+		dataType: string
+		lineageTag: 9c9c0f17-af15-56fa-9300-ef4d4b2842ff
+		summarizeBy: none
+		sourceColumn: Department
+
+	column Region
+		dataType: string
+		lineageTag: c82829d1-b006-5029-a091-6ae5eaf33299
+		summarizeBy: none
+		sourceColumn: Region
+
+	column Manager
+		dataType: string
+		lineageTag: 4b1e3a5a-8681-54bc-8624-c5bba95ce2b4
+		summarizeBy: none
+		sourceColumn: Manager
+
+	hierarchy Organisation
+		lineageTag: 90bb927f-170a-5c93-a162-34aafdcef97e
+
+		level Department
+			lineageTag: 349d862e-9974-594e-83f1-f586fb8d93e8
+			column: Department
+
+		level 'Cost Centre'
+			lineageTag: b0880845-a942-54eb-8043-50c520ac4993
+			column: 'Cost Centre'
+
+	partition 'Cost Centre' = m
+		mode: import
+		source =
+				let
+					Source = Csv.Document(File.Contents(DataFolder & "dim_cost_centre.csv"), [Delimiter = ",", Encoding = 65001, QuoteStyle = QuoteStyle.Csv]),
+					Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars = true]),
+					// empty CSV fields -> null, so typed conversion does not raise errors
+					Nulls = Table.TransformColumns(Promoted, List.Transform(Table.ColumnNames(Promoted), each {_, (v) => if v = "" then null else v})),
+					// en-US culture: decimal point is '.', independent of the Windows locale
+					Typed = Table.TransformColumnTypes(Nulls, {
+						{"cost_centre_key", Int64.Type},
+						{"cost_centre_code", type text},
+						{"cost_centre_name", type text},
+						{"cost_centre_label", type text},
+						{"department", type text},
+						{"region", type text},
+						{"manager", type text}
+					}, "en-US"),
+					Renamed = Table.RenameColumns(Typed, {
+						{"cost_centre_key", "Cost Centre Key"},
+						{"cost_centre_code", "Cost Centre Code"},
+						{"cost_centre_name", "Cost Centre Name"},
+						{"cost_centre_label", "Cost Centre"},
+						{"department", "Department"},
+						{"region", "Region"},
+						{"manager", "Manager"}
+					})
+				in
+					Renamed
+
+	annotation PBI_ResultType = Table

@@ -1,0 +1,123 @@
+/// Chart of accounts with P&L hierarchy (category > group > account) and P&L sign.
+table Account
+	lineageTag: 0a99d44a-0685-58fb-a412-ac1e9d16c5c8
+
+	column 'Account Key'
+		dataType: int64
+		isHidden
+		lineageTag: 4e363e39-427a-5bca-aedb-28ea68384085
+		summarizeBy: none
+		sourceColumn: Account Key
+
+	column 'Account Code'
+		dataType: string
+		lineageTag: 8264ebb2-9564-5a30-a5bf-c3d022760066
+		summarizeBy: none
+		sourceColumn: Account Code
+
+	column 'Account Name'
+		dataType: string
+		lineageTag: 4ac010f3-197b-5b78-8a60-711e6a9e9781
+		summarizeBy: none
+		sourceColumn: Account Name
+
+	column Account
+		dataType: string
+		lineageTag: 29728ae2-127e-5c7e-9240-074b5c9b89d7
+		summarizeBy: none
+		sourceColumn: Account
+		sortByColumn: 'Account Code'
+
+	column 'P&L Group'
+		dataType: string
+		lineageTag: 999e59e9-0ed2-529a-91d4-69346d04d91f
+		summarizeBy: none
+		sourceColumn: P&L Group
+		sortByColumn: 'P&L Group Sort'
+
+	column 'P&L Group Sort'
+		dataType: int64
+		isHidden
+		lineageTag: 7ff95a4b-33d4-5eb5-892c-d281c20ff88b
+		summarizeBy: none
+		sourceColumn: P&L Group Sort
+
+	column 'P&L Category'
+		dataType: string
+		lineageTag: 568e8d48-e68d-56ad-84ad-dcc4aa414ed7
+		summarizeBy: none
+		sourceColumn: P&L Category
+		sortByColumn: 'P&L Category Sort'
+
+	column 'P&L Category Sort'
+		dataType: int64
+		isHidden
+		lineageTag: d24aecc0-ff7f-5a46-ae6a-15307676bca5
+		summarizeBy: none
+		sourceColumn: P&L Category Sort
+
+	/// +1 for income, -1 for expense. Multiply natural amounts by this sign to get P&L impact.
+	column Sign
+		dataType: int64
+		lineageTag: 0c3a2757-8042-5739-ad4d-4c49baa0b889
+		summarizeBy: none
+		sourceColumn: Sign
+
+	column 'Account Type'
+		dataType: string
+		lineageTag: ff79af22-db94-5131-b3ef-ffee55d3b143
+		summarizeBy: none
+		sourceColumn: Account Type
+
+	hierarchy 'P&L Hierarchy'
+		lineageTag: 41b3e33f-6f6b-5db2-8473-e507c5de100d
+
+		level Category
+			lineageTag: 5173a512-906e-5d08-ab7c-030ae902b58e
+			column: 'P&L Category'
+
+		level Group
+			lineageTag: 5c8c6812-86da-528c-b3da-cdd80904b5a8
+			column: 'P&L Group'
+
+		level Account
+			lineageTag: 2bb3906a-9cc7-5ae6-a9a2-2a082c3f7e90
+			column: Account
+
+	partition Account = m
+		mode: import
+		source =
+				let
+					Source = Csv.Document(File.Contents(DataFolder & "dim_account.csv"), [Delimiter = ",", Encoding = 65001, QuoteStyle = QuoteStyle.Csv]),
+					Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars = true]),
+					// empty CSV fields -> null, so typed conversion does not raise errors
+					Nulls = Table.TransformColumns(Promoted, List.Transform(Table.ColumnNames(Promoted), each {_, (v) => if v = "" then null else v})),
+					// en-US culture: decimal point is '.', independent of the Windows locale
+					Typed = Table.TransformColumnTypes(Nulls, {
+						{"account_key", Int64.Type},
+						{"account_code", type text},
+						{"account_name", type text},
+						{"account_label", type text},
+						{"pnl_group", type text},
+						{"pnl_group_sort", Int64.Type},
+						{"pnl_category", type text},
+						{"pnl_category_sort", Int64.Type},
+						{"sign", Int64.Type},
+						{"account_type", type text}
+					}, "en-US"),
+					Renamed = Table.RenameColumns(Typed, {
+						{"account_key", "Account Key"},
+						{"account_code", "Account Code"},
+						{"account_name", "Account Name"},
+						{"account_label", "Account"},
+						{"pnl_group", "P&L Group"},
+						{"pnl_group_sort", "P&L Group Sort"},
+						{"pnl_category", "P&L Category"},
+						{"pnl_category_sort", "P&L Category Sort"},
+						{"sign", "Sign"},
+						{"account_type", "Account Type"}
+					})
+				in
+					Renamed
+
+	annotation PBI_ResultType = Table

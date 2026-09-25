@@ -1,0 +1,19 @@
+relationship ec3eb99f-7ce9-579f-9455-071e43a4345f
+	fromColumn: 'Fact Finance'.'Date Key'
+	toColumn: Date.'Date Key'
+
+relationship c4bba9d7-733c-52ba-8b68-7bb63939f7b8
+	fromColumn: 'Fact Finance'.'Account Key'
+	toColumn: Account.'Account Key'
+
+relationship bb7ca778-0add-5f48-a758-26d5c563de29
+	fromColumn: 'Fact Finance'.'Cost Centre Key'
+	toColumn: 'Cost Centre'.'Cost Centre Key'
+
+relationship 85e7b828-2990-57e3-922e-c1bd3c3c0424
+	fromColumn: 'Fact Finance'.'Scenario Key'
+	toColumn: Scenario.'Scenario Key'
+
+relationship 5a2bdf16-c67f-598d-96c5-4a1d5fb1cddb
+	fromColumn: 'Rejected Rows'.'Check ID'
+	toColumn: 'DQ Results'.'Check ID'

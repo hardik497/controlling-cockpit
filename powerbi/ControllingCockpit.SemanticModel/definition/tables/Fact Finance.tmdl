@@ -1,0 +1,77 @@
+/// Monthly amounts per account, cost centre and scenario. Natural sign (revenue and costs positive). Use the measures in _Measures instead of the raw columns.
+table 'Fact Finance'
+	lineageTag: bb4a163c-1b24-5f63-baaf-5a068cb32c3b
+
+	column 'Date Key'
+		dataType: int64
+		isHidden
+		lineageTag: eb91648b-07a9-5791-9ac5-35850775877f
+		summarizeBy: none
+		sourceColumn: Date Key
+
+	column 'Account Key'
+		dataType: int64
+		isHidden
+		lineageTag: ae936c4a-4c6a-5efa-832a-2dd8b2ac6067
+		summarizeBy: none
+		sourceColumn: Account Key
+
+	column 'Cost Centre Key'
+		dataType: int64
+		isHidden
+		lineageTag: 1cfa90c3-3d18-59fa-b37e-10086fdc13ea
+		summarizeBy: none
+		sourceColumn: Cost Centre Key
+
+	column 'Scenario Key'
+		dataType: int64
+		isHidden
+		lineageTag: 590fa2bb-cd0f-5891-88af-9a9a62ae8a44
+		summarizeBy: none
+		sourceColumn: Scenario Key
+
+	column Amount
+		dataType: decimal
+		isHidden
+		formatString: €#,##0;-€#,##0;€0
+		lineageTag: a1664712-c3e4-5a60-84f6-3810cefc6590
+		summarizeBy: sum
+		sourceColumn: Amount
+
+	/// Number of GL postings aggregated into this row (1 for plan data).
+	column 'Line Count'
+		dataType: int64
+		isHidden
+		lineageTag: 5c494bf2-72e2-589a-9b23-68957bc0ab64
+		summarizeBy: sum
+		sourceColumn: Line Count
+
+	partition 'Fact Finance' = m
+		mode: import
+		source =
+				let
+					Source = Csv.Document(File.Contents(DataFolder & "fact_finance.csv"), [Delimiter = ",", Encoding = 65001, QuoteStyle = QuoteStyle.Csv]),
+					Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars = true]),
+					// empty CSV fields -> null, so typed conversion does not raise errors
+					Nulls = Table.TransformColumns(Promoted, List.Transform(Table.ColumnNames(Promoted), each {_, (v) => if v = "" then null else v})),
+					// en-US culture: decimal point is '.', independent of the Windows locale
+					Typed = Table.TransformColumnTypes(Nulls, {
+						{"date_key", Int64.Type},
+						{"account_key", Int64.Type},
+						{"cost_centre_key", Int64.Type},
+						{"scenario_key", Int64.Type},
+						{"amount", Currency.Type},
+						{"line_count", Int64.Type}
+					}, "en-US"),
+					Renamed = Table.RenameColumns(Typed, {
+						{"date_key", "Date Key"},
+						{"account_key", "Account Key"},
+						{"cost_centre_key", "Cost Centre Key"},
+						{"scenario_key", "Scenario Key"},
+						{"amount", "Amount"},
+						{"line_count", "Line Count"}
+					})
+				in
+					Renamed
+
+	annotation PBI_ResultType = Table

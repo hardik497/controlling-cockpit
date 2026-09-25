@@ -1,0 +1,270 @@
+// =====================================================================
+// Controlling Cockpit – DAX measures (table: _Measures)
+// Generated from src/cockpit/powerbi_model.py – do not edit by hand.
+// Paste into DAX query view as DEFINE MEASURE statements, or read as reference.
+// =====================================================================
+
+// ---- 1 Base ------------------------------------------------------
+
+// Booked actuals after data-quality checks, natural sign (revenue and costs positive).
+// Format: €#,##0;-€#,##0;€0
+'_Measures'[Actual] =
+    CALCULATE ( SUM ( 'Fact Finance'[Amount] ), 'Scenario'[Scenario] = "Actual" )
+
+// Approved budget, natural sign.
+// Format: €#,##0;-€#,##0;€0
+'_Measures'[Budget] =
+    CALCULATE ( SUM ( 'Fact Finance'[Amount] ), 'Scenario'[Scenario] = "Budget" )
+
+// Latest rolling forecast, natural sign.
+// Format: €#,##0;-€#,##0;€0
+'_Measures'[Forecast] =
+    CALCULATE ( SUM ( 'Fact Finance'[Amount] ), 'Scenario'[Scenario] = "Forecast" )
+
+// Actual with P&L sign (revenue +, costs -). Summed over all accounts = EBIT.
+// Format: €#,##0;-€#,##0;€0
+'_Measures'[Actual (P&L)] =
+    CALCULATE (
+        SUMX ( 'Fact Finance', 'Fact Finance'[Amount] * RELATED ( 'Account'[Sign] ) ),
+        'Scenario'[Scenario] = "Actual"
+    )
+
+// Budget with P&L sign (revenue +, costs -).
+// Format: €#,##0;-€#,##0;€0
+'_Measures'[Budget (P&L)] =
+    CALCULATE (
+        SUMX ( 'Fact Finance', 'Fact Finance'[Amount] * RELATED ( 'Account'[Sign] ) ),
+        'Scenario'[Scenario] = "Budget"
+    )
+
+// ---- 2 Variance --------------------------------------------------
+
+// Actual minus Budget in natural sign. For cost lines a positive value means over budget (adverse); for revenue it means ahead of budget (favourable).
+// Format: €#,##0;-€#,##0;€0
+'_Measures'[Variance (Abs)] =
+    [Actual] - [Budget]
+
+// Variance (Abs) divided by Budget.
+// Format: +0.0%;-0.0%;0.0%
+'_Measures'[Variance %] =
+    DIVIDE ( [Variance (Abs)], ABS ( [Budget] ) )
+
+// Sign-aware variance: positive = favourable for profit, negative = adverse. Use this for red/green conditional formatting across revenue and cost lines.
+// Format: €#,##0;-€#,##0;€0
+'_Measures'[Variance (P&L Impact)] =
+    [Actual (P&L)] - [Budget (P&L)]
+
+// Sign-aware variance in percent of budget.
+// Format: +0.0%;-0.0%;0.0%
+'_Measures'[Variance % (P&L Impact)] =
+    DIVIDE ( [Variance (P&L Impact)], ABS ( [Budget (P&L)] ) )
+
+// Hex colour for conditional formatting (field value): green = favourable, amber = up to 5% adverse, red = more than 5% adverse.
+'_Measures'[Variance Colour] =
+    VAR v = [Variance % (P&L Impact)]
+    RETURN
+        SWITCH (
+            TRUE (),
+            ISBLANK ( v ), BLANK (),
+            v >= 0, "#2E7D32",
+            v >= -0.05, "#F9A825",
+            "#C62828"
+        )
+
+// ---- 3 Time Intelligence -----------------------------------------
+
+// Actual year-to-date within the fiscal year.
+// Format: €#,##0;-€#,##0;€0
+'_Measures'[Actual YTD] =
+    CALCULATE ( [Actual], DATESYTD ( 'Date'[Date] ) )
+
+// Budget year-to-date within the fiscal year.
+// Format: €#,##0;-€#,##0;€0
+'_Measures'[Budget YTD] =
+    CALCULATE ( [Budget], DATESYTD ( 'Date'[Date] ) )
+
+// Full-year budget of the fiscal year(s) in context, ignoring month filters.
+// Format: €#,##0;-€#,##0;€0
+'_Measures'[Budget (Full Year)] =
+    CALCULATE ( [Budget], REMOVEFILTERS ( 'Date' ), VALUES ( 'Date'[Fiscal Year] ) )
+
+// Actual of the same period in the prior year.
+// Format: €#,##0;-€#,##0;€0
+'_Measures'[Actual PY] =
+    CALCULATE ( [Actual], SAMEPERIODLASTYEAR ( 'Date'[Date] ) )
+
+// Year-over-year growth of Actual. Blank for FY2023 (no prior year loaded).
+// Format: +0.0%;-0.0%;0.0%
+'_Measures'[YoY %] =
+    DIVIDE ( [Actual] - [Actual PY], ABS ( [Actual PY] ) )
+
+// Share of the full-year budget already consumed year-to-date. Mainly meaningful for cost centres.
+// Format: 0.0%;-0.0%;0.0%
+'_Measures'[Budget Consumption %] =
+    DIVIDE ( [Actual YTD], [Budget (Full Year)] )
+
+// ---- 4 P&L KPIs --------------------------------------------------
+
+// Actual revenue.
+// Format: €#,##0;-€#,##0;€0
+'_Measures'[Revenue] =
+    CALCULATE ( [Actual], 'Account'[P&L Category] = "Revenue" )
+
+// Budgeted revenue.
+// Format: €#,##0;-€#,##0;€0
+'_Measures'[Revenue (Budget)] =
+    CALCULATE ( [Budget], 'Account'[P&L Category] = "Revenue" )
+
+// Actual cost of goods sold.
+// Format: €#,##0;-€#,##0;€0
+'_Measures'[COGS] =
+    CALCULATE ( [Actual], 'Account'[P&L Category] = "Cost of Goods Sold" )
+
+// Revenue minus cost of goods sold (actual).
+// Format: €#,##0;-€#,##0;€0
+'_Measures'[Gross Profit] =
+    [Revenue] - [COGS]
+
+// Gross profit in percent of revenue (actual).
+// Format: 0.0%;-0.0%;0.0%
+'_Measures'[Gross Margin %] =
+    DIVIDE ( [Gross Profit], [Revenue] )
+
+// Budgeted gross margin in percent of budgeted revenue.
+// Format: 0.0%;-0.0%;0.0%
+'_Measures'[Gross Margin % (Budget)] =
+    VAR rev = CALCULATE ( [Budget], 'Account'[P&L Category] = "Revenue" )
+    VAR cogs = CALCULATE ( [Budget], 'Account'[P&L Category] = "Cost of Goods Sold" )
+    RETURN DIVIDE ( rev - cogs, rev )
+
+// Actual operating expenses (personnel, marketing, IT, ...).
+// Format: €#,##0;-€#,##0;€0
+'_Measures'[Operating Expenses] =
+    CALCULATE ( [Actual], 'Account'[P&L Category] = "Operating Expenses" )
+
+// Earnings before interest and taxes (actual): revenue - COGS - OpEx.
+// Format: €#,##0;-€#,##0;€0
+'_Measures'[EBIT] =
+    [Gross Profit] - [Operating Expenses]
+
+// Budgeted EBIT: signed budget (revenue +, costs -) over the accounts in context.
+// Format: €#,##0;-€#,##0;€0
+'_Measures'[EBIT (Budget)] =
+    [Budget (P&L)]
+
+// EBIT year-to-date (actual).
+// Format: €#,##0;-€#,##0;€0
+'_Measures'[EBIT YTD] =
+    CALCULATE ( [EBIT], DATESYTD ( 'Date'[Date] ) )
+
+// EBIT year-to-date (budget).
+// Format: €#,##0;-€#,##0;€0
+'_Measures'[EBIT (Budget) YTD] =
+    CALCULATE ( [EBIT (Budget)], DATESYTD ( 'Date'[Date] ) )
+
+// EBIT in percent of revenue (actual).
+// Format: 0.0%;-0.0%;0.0%
+'_Measures'[Operating Margin (EBIT) %] =
+    DIVIDE ( [EBIT], [Revenue] )
+
+// Budgeted EBIT in percent of budgeted revenue.
+// Format: 0.0%;-0.0%;0.0%
+'_Measures'[Operating Margin (EBIT) % (Budget)] =
+    DIVIDE ( [EBIT (Budget)], [Revenue (Budget)] )
+
+// ---- 5 Forecast --------------------------------------------------
+
+// 1 - WAPE: 1 - sum|Actual - Forecast| / sum|Actual| at month x account x cost-centre grain, so over- and under-forecasts cannot cancel out.
+// Format: 0.0%;-0.0%;0.0%
+'_Measures'[Forecast Accuracy %] =
+    VAR grain =
+        SUMMARIZE (
+            'Fact Finance',
+            'Date'[Period],
+            'Account'[Account Code],
+            'Cost Centre'[Cost Centre Code]
+        )
+    VAR absError = SUMX ( grain, ABS ( [Actual] - [Forecast] ) )
+    VAR absActual = SUMX ( grain, ABS ( [Actual] ) )
+    RETURN IF ( absActual > 0, 1 - DIVIDE ( absError, absActual ) )
+
+// Forecast minus Actual (natural sign).
+// Format: €#,##0;-€#,##0;€0
+'_Measures'[Forecast vs Actual (Abs)] =
+    [Forecast] - [Actual]
+
+// ---- 6 Data Quality ----------------------------------------------
+
+// Number of quarantined source records.
+// Format: #,##0
+'_Measures'[Rejected Rows] =
+    COUNTROWS ( 'Rejected Rows' )
+
+// Total amount of quarantined source records (natural sign).
+// Format: €#,##0;-€#,##0;€0
+'_Measures'[Rejected Amount] =
+    SUM ( 'Rejected Rows'[Amount] )
+
+// Number of checks with status FAIL.
+// Format: #,##0
+'_Measures'[DQ Checks Failed] =
+    CALCULATE ( COUNTROWS ( 'DQ Results' ), 'DQ Results'[Status] = "FAIL" )
+
+// Share of checks that passed.
+// Format: 0.0%;-0.0%;0.0%
+'_Measures'[DQ Checks Passed %] =
+    DIVIDE (
+        CALCULATE ( COUNTROWS ( 'DQ Results' ), 'DQ Results'[Status] = "PASS" ),
+        COUNTROWS ( 'DQ Results' )
+    )
+
+// Share of general-ledger rows that passed all ERROR checks and were loaded.
+// Format: 0.0%;-0.0%;0.0%
+'_Measures'[Clean Row Rate %] =
+    VAR ledgerRows =
+        CALCULATE (
+            MAX ( 'DQ Results'[Rows Checked] ),
+            REMOVEFILTERS ( 'DQ Results' ),
+            'DQ Results'[Source Table] = "stg_gl_actuals"
+        )
+    VAR rejected =
+        CALCULATE ( COUNTROWS ( 'Rejected Rows' ), 'Rejected Rows'[Scenario] = "Actual" )
+    RETURN DIVIDE ( ledgerRows - rejected, ledgerRows )
+
+// Hex colour per check status for conditional formatting (field value).
+'_Measures'[DQ Status Colour] =
+    SWITCH (
+        SELECTEDVALUE ( 'DQ Results'[Status] ),
+        "PASS", "#2E7D32",
+        "WARN", "#F9A825",
+        "FAIL", "#C62828"
+    )
+
+// ---- 7 Labels ----------------------------------------------------
+
+// Dynamic page title reflecting the selected fiscal year and departments.
+'_Measures'[Report Title] =
+    VAR yr =
+        IF (
+            HASONEVALUE ( 'Date'[Fiscal Year Label] ),
+            VALUES ( 'Date'[Fiscal Year Label] ),
+            "FY2023–FY2025"
+        )
+    VAR dept =
+        IF (
+            ISFILTERED ( 'Cost Centre'[Department] ),
+            CONCATENATEX ( VALUES ( 'Cost Centre'[Department] ), 'Cost Centre'[Department], ", " ),
+            "All departments"
+        )
+    RETURN "Nordwerk GmbH · Budget vs. Actual · " & yr & " · " & dept
+
+// One-line text for KPI card subtitles and tooltips.
+'_Measures'[Variance Commentary] =
+    VAR v = [Variance (P&L Impact)]
+    RETURN
+        IF (
+            NOT ISBLANK ( v ),
+            IF ( v >= 0, "Favourable by ", "Adverse by " )
+                & FORMAT ( ABS ( v ), "€#,##0" )
+                & " (" & FORMAT ( [Variance % (P&L Impact)], "+0.0%;-0.0%" ) & ")"
+        )

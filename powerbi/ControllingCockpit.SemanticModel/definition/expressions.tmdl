@@ -1,0 +1,7 @@
+/// Folder containing the exported star-schema CSV files (data/model/).
+/// Must end with a path separator. Change it in Power BI Desktop via
+/// Transform data > Edit parameters.
+expression DataFolder = "C:\Projects\controlling-cockpit\data\model\" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
+	lineageTag: ff3978b5-4616-581e-ade3-e59b1dd94439
+
+	annotation PBI_ResultType = Text

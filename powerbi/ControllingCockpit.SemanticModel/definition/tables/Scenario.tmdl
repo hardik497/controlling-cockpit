@@ -1,0 +1,56 @@
+/// Planning scenario: Actual, Budget, Forecast.
+table Scenario
+	lineageTag: 7017acd4-3b9e-5b56-a6d0-f0c2ba5274a1
+
+	column 'Scenario Key'
+		dataType: int64
+		isHidden
+		lineageTag: 82e778ea-f8f8-5d52-8061-41aef5708c33
+		summarizeBy: none
+		sourceColumn: Scenario Key
+
+	column Scenario
+		dataType: string
+		lineageTag: 4dff2f77-f7e9-5531-8add-8c2c43c7460d
+		summarizeBy: none
+		sourceColumn: Scenario
+		sortByColumn: 'Scenario Sort'
+
+	column 'Scenario Sort'
+		dataType: int64
+		isHidden
+		lineageTag: f77ed4a3-6438-5273-bf3e-33c0c9088f45
+		summarizeBy: none
+		sourceColumn: Scenario Sort
+
+	column 'Scenario Description'
+		dataType: string
+		lineageTag: 85179f1b-bc22-50ed-a8e3-e637405ccf6f
+		summarizeBy: none
+		sourceColumn: Scenario Description
+
+	partition Scenario = m
+		mode: import
+		source =
+				let
+					Source = Csv.Document(File.Contents(DataFolder & "dim_scenario.csv"), [Delimiter = ",", Encoding = 65001, QuoteStyle = QuoteStyle.Csv]),
+					Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars = true]),
+					// empty CSV fields -> null, so typed conversion does not raise errors
+					Nulls = Table.TransformColumns(Promoted, List.Transform(Table.ColumnNames(Promoted), each {_, (v) => if v = "" then null else v})),
+					// en-US culture: decimal point is '.', independent of the Windows locale
+					Typed = Table.TransformColumnTypes(Nulls, {
+						{"scenario_key", Int64.Type},
+						{"scenario", type text},
+						{"scenario_sort", Int64.Type},
+						{"description", type text}
+					}, "en-US"),
+					Renamed = Table.RenameColumns(Typed, {
+						{"scenario_key", "Scenario Key"},
+						{"scenario", "Scenario"},
+						{"scenario_sort", "Scenario Sort"},
+						{"description", "Scenario Description"}
+					})
+				in
+					Renamed
+
+	annotation PBI_ResultType = Table

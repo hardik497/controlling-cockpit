@@ -1,0 +1,320 @@
+/// Home table for all DAX measures. Contains no data (one hidden placeholder column).
+table _Measures
+	lineageTag: d7cf707d-40db-538b-b6d1-ded050aafe57
+
+	/// Booked actuals after data-quality checks, natural sign (revenue and costs positive).
+	measure Actual = CALCULATE ( SUM ( 'Fact Finance'[Amount] ), 'Scenario'[Scenario] = "Actual" )
+		formatString: €#,##0;-€#,##0;€0
+		displayFolder: 1 Base
+		lineageTag: 84c163ae-27af-5496-ad28-3d29e49c5be3
+
+	/// Approved budget, natural sign.
+	measure Budget = CALCULATE ( SUM ( 'Fact Finance'[Amount] ), 'Scenario'[Scenario] = "Budget" )
+		formatString: €#,##0;-€#,##0;€0
+		displayFolder: 1 Base
+		lineageTag: 201bfc71-3693-5a3e-9968-03214eb50446
+
+	/// Latest rolling forecast, natural sign.
+	measure Forecast = CALCULATE ( SUM ( 'Fact Finance'[Amount] ), 'Scenario'[Scenario] = "Forecast" )
+		formatString: €#,##0;-€#,##0;€0
+		displayFolder: 1 Base
+		lineageTag: a4d2fdaf-419f-58f5-8781-ef520b627d31
+
+	/// Actual with P&L sign (revenue +, costs -). Summed over all accounts = EBIT.
+	measure 'Actual (P&L)' =
+			CALCULATE (
+			    SUMX ( 'Fact Finance', 'Fact Finance'[Amount] * RELATED ( 'Account'[Sign] ) ),
+			    'Scenario'[Scenario] = "Actual"
+			)
+		formatString: €#,##0;-€#,##0;€0
+		displayFolder: 1 Base
+		lineageTag: e49bf05b-2efe-5d81-9c8b-f520146e1539
+
+	/// Budget with P&L sign (revenue +, costs -).
+	measure 'Budget (P&L)' =
+			CALCULATE (
+			    SUMX ( 'Fact Finance', 'Fact Finance'[Amount] * RELATED ( 'Account'[Sign] ) ),
+			    'Scenario'[Scenario] = "Budget"
+			)
+		formatString: €#,##0;-€#,##0;€0
+		displayFolder: 1 Base
+		lineageTag: 45993dac-b24f-5579-997d-7513e7968aee
+
+	/// Actual minus Budget in natural sign. For cost lines a positive value means over budget (adverse); for revenue it means ahead of budget (favourable).
+	measure 'Variance (Abs)' = [Actual] - [Budget]
+		formatString: €#,##0;-€#,##0;€0
+		displayFolder: 2 Variance
+		lineageTag: c8a69671-9333-5434-8cf2-97c795198e96
+
+	/// Variance (Abs) divided by Budget.
+	measure 'Variance %' = DIVIDE ( [Variance (Abs)], ABS ( [Budget] ) )
+		formatString: +0.0%;-0.0%;0.0%
+		displayFolder: 2 Variance
+		lineageTag: 30166762-de49-5628-bb3d-648b61926688
+
+	/// Sign-aware variance: positive = favourable for profit, negative = adverse. Use this for red/green conditional formatting across revenue and cost lines.
+	measure 'Variance (P&L Impact)' = [Actual (P&L)] - [Budget (P&L)]
+		formatString: €#,##0;-€#,##0;€0
+		displayFolder: 2 Variance
+		lineageTag: a3d919a0-acd6-5422-835e-209a15a74946
+
+	/// Sign-aware variance in percent of budget.
+	measure 'Variance % (P&L Impact)' = DIVIDE ( [Variance (P&L Impact)], ABS ( [Budget (P&L)] ) )
+		formatString: +0.0%;-0.0%;0.0%
+		displayFolder: 2 Variance
+		lineageTag: 5187a633-cecf-515d-8139-0ce345c75e79
+
+	/// Hex colour for conditional formatting (field value): green = favourable, amber = up to 5% adverse, red = more than 5% adverse.
+	measure 'Variance Colour' =
+			VAR v = [Variance % (P&L Impact)]
+			RETURN
+			    SWITCH (
+			        TRUE (),
+			        ISBLANK ( v ), BLANK (),
+			        v >= 0, "#2E7D32",
+			        v >= -0.05, "#F9A825",
+			        "#C62828"
+			    )
+		displayFolder: 2 Variance
+		lineageTag: 2a97562b-b039-583f-bafa-7baa7e2c23b5
+
+	/// Actual year-to-date within the fiscal year.
+	measure 'Actual YTD' = CALCULATE ( [Actual], DATESYTD ( 'Date'[Date] ) )
+		formatString: €#,##0;-€#,##0;€0
+		displayFolder: 3 Time Intelligence
+		lineageTag: c4571d79-432f-57ec-923b-423df01390e3
+
+	/// Budget year-to-date within the fiscal year.
+	measure 'Budget YTD' = CALCULATE ( [Budget], DATESYTD ( 'Date'[Date] ) )
+		formatString: €#,##0;-€#,##0;€0
+		displayFolder: 3 Time Intelligence
+		lineageTag: 1dd1aba8-2979-5ea9-9b50-52e9b707b226
+
+	/// Full-year budget of the fiscal year(s) in context, ignoring month filters.
+	measure 'Budget (Full Year)' = CALCULATE ( [Budget], REMOVEFILTERS ( 'Date' ), VALUES ( 'Date'[Fiscal Year] ) )
+		formatString: €#,##0;-€#,##0;€0
+		displayFolder: 3 Time Intelligence
+		lineageTag: 7eef9c14-f22a-53b9-ac57-6f59ba941b94
+
+	/// Actual of the same period in the prior year.
+	measure 'Actual PY' = CALCULATE ( [Actual], SAMEPERIODLASTYEAR ( 'Date'[Date] ) )
+		formatString: €#,##0;-€#,##0;€0
+		displayFolder: 3 Time Intelligence
+		lineageTag: 9c7c00dd-c22e-54bb-927e-c4d589cdd9e2
+
+	/// Year-over-year growth of Actual. Blank for FY2023 (no prior year loaded).
+	measure 'YoY %' = DIVIDE ( [Actual] - [Actual PY], ABS ( [Actual PY] ) )
+		formatString: +0.0%;-0.0%;0.0%
+		displayFolder: 3 Time Intelligence
+		lineageTag: a31bf59f-8282-5c5b-9dda-464705da38b2
+
+	/// Share of the full-year budget already consumed year-to-date. Mainly meaningful for cost centres.
+	measure 'Budget Consumption %' = DIVIDE ( [Actual YTD], [Budget (Full Year)] )
+		formatString: 0.0%;-0.0%;0.0%
+		displayFolder: 3 Time Intelligence
+		lineageTag: 96a7362a-d52e-5eae-b263-e61257202236
+
+	/// Actual revenue.
+	measure Revenue = CALCULATE ( [Actual], 'Account'[P&L Category] = "Revenue" )
+		formatString: €#,##0;-€#,##0;€0
+		displayFolder: 4 P&L KPIs
+		lineageTag: e7ed1e94-cf9d-5a41-a11c-ad7bee6567e5
+
+	/// Budgeted revenue.
+	measure 'Revenue (Budget)' = CALCULATE ( [Budget], 'Account'[P&L Category] = "Revenue" )
+		formatString: €#,##0;-€#,##0;€0
+		displayFolder: 4 P&L KPIs
+		lineageTag: fd9b96bc-d9dc-5c20-a576-8192133b155d
+
+	/// Actual cost of goods sold.
+	measure COGS = CALCULATE ( [Actual], 'Account'[P&L Category] = "Cost of Goods Sold" )
+		formatString: €#,##0;-€#,##0;€0
+		displayFolder: 4 P&L KPIs
+		lineageTag: 13433526-710e-5b08-84d3-1462bed78693
+
+	/// Revenue minus cost of goods sold (actual).
+	measure 'Gross Profit' = [Revenue] - [COGS]
+		formatString: €#,##0;-€#,##0;€0
+		displayFolder: 4 P&L KPIs
+		lineageTag: 3b8f5402-ea48-5c61-a998-4180dc87622c
+
+	/// Gross profit in percent of revenue (actual).
+	measure 'Gross Margin %' = DIVIDE ( [Gross Profit], [Revenue] )
+		formatString: 0.0%;-0.0%;0.0%
+		displayFolder: 4 P&L KPIs
+		lineageTag: 4ccd36ee-0022-5f31-a339-909bf5102979
+
+	/// Budgeted gross margin in percent of budgeted revenue.
+	measure 'Gross Margin % (Budget)' =
+			VAR rev = CALCULATE ( [Budget], 'Account'[P&L Category] = "Revenue" )
+			VAR cogs = CALCULATE ( [Budget], 'Account'[P&L Category] = "Cost of Goods Sold" )
+			RETURN DIVIDE ( rev - cogs, rev )
+		formatString: 0.0%;-0.0%;0.0%
+		displayFolder: 4 P&L KPIs
+		lineageTag: 3afd0d93-3b1d-5292-90fd-d6a363e97b8f
+
+	/// Actual operating expenses (personnel, marketing, IT, ...).
+	measure 'Operating Expenses' = CALCULATE ( [Actual], 'Account'[P&L Category] = "Operating Expenses" )
+		formatString: €#,##0;-€#,##0;€0
+		displayFolder: 4 P&L KPIs
+		lineageTag: ef67712a-e4e4-59ad-89f0-47a1df586f94
+
+	/// Earnings before interest and taxes (actual): revenue - COGS - OpEx.
+	measure EBIT = [Gross Profit] - [Operating Expenses]
+		formatString: €#,##0;-€#,##0;€0
+		displayFolder: 4 P&L KPIs
+		lineageTag: 3851b5de-aa88-5f4c-86ae-0a4a479a4df2
+
+	/// Budgeted EBIT: signed budget (revenue +, costs -) over the accounts in context.
+	measure 'EBIT (Budget)' = [Budget (P&L)]
+		formatString: €#,##0;-€#,##0;€0
+		displayFolder: 4 P&L KPIs
+		lineageTag: 381c7716-9dd1-5784-89d4-36f79ceca95c
+
+	/// EBIT year-to-date (actual).
+	measure 'EBIT YTD' = CALCULATE ( [EBIT], DATESYTD ( 'Date'[Date] ) )
+		formatString: €#,##0;-€#,##0;€0
+		displayFolder: 4 P&L KPIs
+		lineageTag: ef50c871-9a8e-5c4b-9ba2-9f15890cf62c
+
+	/// EBIT year-to-date (budget).
+	measure 'EBIT (Budget) YTD' = CALCULATE ( [EBIT (Budget)], DATESYTD ( 'Date'[Date] ) )
+		formatString: €#,##0;-€#,##0;€0
+		displayFolder: 4 P&L KPIs
+		lineageTag: 6f825d1f-7027-56fc-b6ba-85e509202103
+
+	/// EBIT in percent of revenue (actual).
+	measure 'Operating Margin (EBIT) %' = DIVIDE ( [EBIT], [Revenue] )
+		formatString: 0.0%;-0.0%;0.0%
+		displayFolder: 4 P&L KPIs
+		lineageTag: 2bd41fbc-bf6e-51fe-b051-473d6b7889fe
+
+	/// Budgeted EBIT in percent of budgeted revenue.
+	measure 'Operating Margin (EBIT) % (Budget)' = DIVIDE ( [EBIT (Budget)], [Revenue (Budget)] )
+		formatString: 0.0%;-0.0%;0.0%
+		displayFolder: 4 P&L KPIs
+		lineageTag: 85182588-955f-5b8e-994c-42fe2f877907
+
+	/// 1 - WAPE: 1 - sum|Actual - Forecast| / sum|Actual| at month x account x cost-centre grain, so over- and under-forecasts cannot cancel out.
+	measure 'Forecast Accuracy %' =
+			VAR grain =
+			    SUMMARIZE (
+			        'Fact Finance',
+			        'Date'[Period],
+			        'Account'[Account Code],
+			        'Cost Centre'[Cost Centre Code]
+			    )
+			VAR absError = SUMX ( grain, ABS ( [Actual] - [Forecast] ) )
+			VAR absActual = SUMX ( grain, ABS ( [Actual] ) )
+			RETURN IF ( absActual > 0, 1 - DIVIDE ( absError, absActual ) )
+		formatString: 0.0%;-0.0%;0.0%
+		displayFolder: 5 Forecast
+		lineageTag: 8b391300-3231-578e-8008-6d7540e443b6
+
+	/// Forecast minus Actual (natural sign).
+	measure 'Forecast vs Actual (Abs)' = [Forecast] - [Actual]
+		formatString: €#,##0;-€#,##0;€0
+		displayFolder: 5 Forecast
+		lineageTag: 75228175-1883-5beb-95dd-946b9d065eba
+
+	/// Number of quarantined source records.
+	measure 'Rejected Rows' = COUNTROWS ( 'Rejected Rows' )
+		formatString: #,##0
+		displayFolder: 6 Data Quality
+		lineageTag: 8475ccd4-dc16-5970-9fe3-687304ff0372
+
+	/// Total amount of quarantined source records (natural sign).
+	measure 'Rejected Amount' = SUM ( 'Rejected Rows'[Amount] )
+		formatString: €#,##0;-€#,##0;€0
+		displayFolder: 6 Data Quality
+		lineageTag: ea5c5147-90a6-5725-9f51-c6a36bfdbe6f
+
+	/// Number of checks with status FAIL.
+	measure 'DQ Checks Failed' = CALCULATE ( COUNTROWS ( 'DQ Results' ), 'DQ Results'[Status] = "FAIL" )
+		formatString: #,##0
+		displayFolder: 6 Data Quality
+		lineageTag: e3340173-a155-50c1-92b3-b4101d4af36c
+
+	/// Share of checks that passed.
+	measure 'DQ Checks Passed %' =
+			DIVIDE (
+			    CALCULATE ( COUNTROWS ( 'DQ Results' ), 'DQ Results'[Status] = "PASS" ),
+			    COUNTROWS ( 'DQ Results' )
+			)
+		formatString: 0.0%;-0.0%;0.0%
+		displayFolder: 6 Data Quality
+		lineageTag: f663aeb5-c909-517d-bd3e-766c00f0c8bd
+
+	/// Share of general-ledger rows that passed all ERROR checks and were loaded.
+	measure 'Clean Row Rate %' =
+			VAR ledgerRows =
+			    CALCULATE (
+			        MAX ( 'DQ Results'[Rows Checked] ),
+			        REMOVEFILTERS ( 'DQ Results' ),
+			        'DQ Results'[Source Table] = "stg_gl_actuals"
+			    )
+			VAR rejected =
+			    CALCULATE ( COUNTROWS ( 'Rejected Rows' ), 'Rejected Rows'[Scenario] = "Actual" )
+			RETURN DIVIDE ( ledgerRows - rejected, ledgerRows )
+		formatString: 0.0%;-0.0%;0.0%
+		displayFolder: 6 Data Quality
+		lineageTag: c91d2883-57f3-59d7-a3dc-8417cb1acf91
+
+	/// Hex colour per check status for conditional formatting (field value).
+	measure 'DQ Status Colour' =
+			SWITCH (
+			    SELECTEDVALUE ( 'DQ Results'[Status] ),
+			    "PASS", "#2E7D32",
+			    "WARN", "#F9A825",
+			    "FAIL", "#C62828"
+			)
+		displayFolder: 6 Data Quality
+		lineageTag: f3e85cc2-4643-56fa-a121-7f63aab341b3
+
+	/// Dynamic page title reflecting the selected fiscal year and departments.
+	measure 'Report Title' =
+			VAR yr =
+			    IF (
+			        HASONEVALUE ( 'Date'[Fiscal Year Label] ),
+			        VALUES ( 'Date'[Fiscal Year Label] ),
+			        "FY2023–FY2025"
+			    )
+			VAR dept =
+			    IF (
+			        ISFILTERED ( 'Cost Centre'[Department] ),
+			        CONCATENATEX ( VALUES ( 'Cost Centre'[Department] ), 'Cost Centre'[Department], ", " ),
+			        "All departments"
+			    )
+			RETURN "Nordwerk GmbH · Budget vs. Actual · " & yr & " · " & dept
+		displayFolder: 7 Labels
+		lineageTag: eb5f49e9-3d9a-5b0f-9e56-b0799741c266
+
+	/// One-line text for KPI card subtitles and tooltips.
+	measure 'Variance Commentary' =
+			VAR v = [Variance (P&L Impact)]
+			RETURN
+			    IF (
+			        NOT ISBLANK ( v ),
+			        IF ( v >= 0, "Favourable by ", "Adverse by " )
+			            & FORMAT ( ABS ( v ), "€#,##0" )
+			            & " (" & FORMAT ( [Variance % (P&L Impact)], "+0.0%;-0.0%" ) & ")"
+			    )
+		displayFolder: 7 Labels
+		lineageTag: 4a0c6c1d-bb8a-5bdb-aa48-8d80979e4186
+
+	column Placeholder
+		dataType: string
+		isHidden
+		lineageTag: 3b0593bd-2c21-5fe0-a249-b3699df1cd8a
+		summarizeBy: none
+		sourceColumn: Placeholder
+
+	partition _Measures = m
+		mode: import
+		source =
+				let
+					Source = #table(type table [Placeholder = text], {})
+				in
+					Source
+
+	annotation PBI_ResultType = Table

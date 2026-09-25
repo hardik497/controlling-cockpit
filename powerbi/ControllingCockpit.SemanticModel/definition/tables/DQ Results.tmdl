@@ -1,0 +1,132 @@
+/// One row per data-quality check with severity, status and affected rows.
+table 'DQ Results'
+	lineageTag: 0f61ecb2-3ac9-5a9d-b73b-b2ea3c9c8d09
+
+	column 'Check ID'
+		dataType: string
+		lineageTag: 46c160a1-448a-53eb-9506-09727df966ca
+		summarizeBy: none
+		sourceColumn: Check ID
+
+	column 'Check Name'
+		dataType: string
+		lineageTag: e265bf3d-1ec7-555c-8359-96b980931c11
+		summarizeBy: none
+		sourceColumn: Check Name
+
+	column 'Check Category'
+		dataType: string
+		lineageTag: e392e383-b947-58e9-96f9-5fd2f3bf2520
+		summarizeBy: none
+		sourceColumn: Check Category
+
+	column 'Source Table'
+		dataType: string
+		lineageTag: 1fbd2a4e-65eb-5b2e-897b-1ecdcf0e5cf1
+		summarizeBy: none
+		sourceColumn: Source Table
+
+	column Severity
+		dataType: string
+		lineageTag: 072f9a66-e6aa-5a42-bbed-4c23000470a7
+		summarizeBy: none
+		sourceColumn: Severity
+
+	column 'Rows Checked'
+		dataType: int64
+		formatString: #,##0
+		lineageTag: 3abb769e-7ed9-52d8-b7bf-922f0d0f6c35
+		summarizeBy: sum
+		sourceColumn: Rows Checked
+
+	column 'Rows Affected'
+		dataType: int64
+		formatString: #,##0
+		lineageTag: 0ace0dc2-9a1f-55ab-b7c9-10703029deab
+		summarizeBy: sum
+		sourceColumn: Rows Affected
+
+	column 'Pct Affected'
+		dataType: double
+		formatString: 0.000
+		lineageTag: f86e9005-d0db-5758-9fbe-ffae5b14f1b4
+		summarizeBy: none
+		sourceColumn: Pct Affected
+
+	column 'Amount Affected'
+		dataType: decimal
+		formatString: €#,##0;-€#,##0;€0
+		lineageTag: d37990fc-e0f1-5d3b-b0ae-b019d5c45e1b
+		summarizeBy: sum
+		sourceColumn: Amount Affected
+
+	column Status
+		dataType: string
+		lineageTag: 47ea6691-8e9b-5d81-bee0-915e355be3a5
+		summarizeBy: none
+		sourceColumn: Status
+
+	column 'Sample Keys'
+		dataType: string
+		lineageTag: ef390505-56f2-5d13-a46b-9e0a1eaef108
+		summarizeBy: none
+		sourceColumn: Sample Keys
+
+	column 'Check Description'
+		dataType: string
+		lineageTag: de451e3e-3a4c-5b02-94c5-19fe39dec363
+		summarizeBy: none
+		sourceColumn: Check Description
+
+	column 'Checked At'
+		dataType: dateTime
+		formatString: yyyy-mm-dd hh:nn
+		lineageTag: 69d6cd50-e664-56cf-81de-8b5265f3f811
+		summarizeBy: none
+		sourceColumn: Checked At
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	partition 'DQ Results' = m
+		mode: import
+		source =
+				let
+					Source = Csv.Document(File.Contents(DataFolder & "dq_results.csv"), [Delimiter = ",", Encoding = 65001, QuoteStyle = QuoteStyle.Csv]),
+					Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars = true]),
+					// empty CSV fields -> null, so typed conversion does not raise errors
+					Nulls = Table.TransformColumns(Promoted, List.Transform(Table.ColumnNames(Promoted), each {_, (v) => if v = "" then null else v})),
+					// en-US culture: decimal point is '.', independent of the Windows locale
+					Typed = Table.TransformColumnTypes(Nulls, {
+						{"check_id", type text},
+						{"check_name", type text},
+						{"check_category", type text},
+						{"source_table", type text},
+						{"severity", type text},
+						{"rows_checked", Int64.Type},
+						{"rows_affected", Int64.Type},
+						{"pct_affected", type number},
+						{"amount_affected", Currency.Type},
+						{"status", type text},
+						{"sample_keys", type text},
+						{"description", type text},
+						{"checked_at", type datetime}
+					}, "en-US"),
+					Renamed = Table.RenameColumns(Typed, {
+						{"check_id", "Check ID"},
+						{"check_name", "Check Name"},
+						{"check_category", "Check Category"},
+						{"source_table", "Source Table"},
+						{"severity", "Severity"},
+						{"rows_checked", "Rows Checked"},
+						{"rows_affected", "Rows Affected"},
+						{"pct_affected", "Pct Affected"},
+						{"amount_affected", "Amount Affected"},
+						{"status", "Status"},
+						{"sample_keys", "Sample Keys"},
+						{"description", "Check Description"},
+						{"checked_at", "Checked At"}
+					})
+				in
+					Renamed
+
+	annotation PBI_ResultType = Table

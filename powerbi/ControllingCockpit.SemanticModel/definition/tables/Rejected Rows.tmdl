@@ -1,0 +1,132 @@
+/// Quarantined source records that failed an ERROR-severity data-quality check.
+table 'Rejected Rows'
+	lineageTag: 208a655c-8c1f-54be-8f41-45b9111db35b
+
+	column Scenario
+		dataType: string
+		lineageTag: 7c77fade-e78d-5a20-ba30-a31ef93b5066
+		summarizeBy: none
+		sourceColumn: Scenario
+
+	column 'Source Table'
+		dataType: string
+		lineageTag: e843cc61-e7e5-5c88-b5a6-a0bcd4321af0
+		summarizeBy: none
+		sourceColumn: Source Table
+
+	column 'Record Key'
+		dataType: string
+		lineageTag: f62f60ec-c833-5d1e-bcc9-fcd5284a534b
+		summarizeBy: none
+		sourceColumn: Record Key
+
+	column 'Document Ref'
+		dataType: string
+		lineageTag: f4426992-05df-5f48-8911-010830ba6919
+		summarizeBy: none
+		sourceColumn: Document Ref
+
+	column 'Posting Date'
+		dataType: dateTime
+		formatString: yyyy-mm-dd
+		lineageTag: 7fc273e1-e894-5ab9-898d-cbf91ef1c3c1
+		summarizeBy: none
+		sourceColumn: Posting Date
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column Period
+		dataType: string
+		lineageTag: 40825d9d-1612-50e0-a528-94081c7d9317
+		summarizeBy: none
+		sourceColumn: Period
+
+	column 'Account Code'
+		dataType: string
+		lineageTag: 6ce027cb-0996-534c-8221-bff60cfb65e7
+		summarizeBy: none
+		sourceColumn: Account Code
+
+	column 'Cost Centre Code'
+		dataType: string
+		lineageTag: 997d5246-1c58-5ada-bb33-560561f2ab25
+		summarizeBy: none
+		sourceColumn: Cost Centre Code
+
+	column Amount
+		dataType: decimal
+		formatString: €#,##0;-€#,##0;€0
+		lineageTag: a937315a-a25b-5165-9868-26c3601eb69a
+		summarizeBy: sum
+		sourceColumn: Amount
+
+	column 'Check ID'
+		dataType: string
+		lineageTag: d86c2f17-cdca-5888-be91-e5e4ede64a13
+		summarizeBy: none
+		sourceColumn: Check ID
+
+	column 'Reject Reason'
+		dataType: string
+		lineageTag: 9bd2c087-a884-5b95-8737-53cc467aae83
+		summarizeBy: none
+		sourceColumn: Reject Reason
+
+	column 'All Check IDs'
+		dataType: string
+		lineageTag: 58ace1c1-2392-589a-b2cf-68d9ff285f83
+		summarizeBy: none
+		sourceColumn: All Check IDs
+
+	column 'Rejected At'
+		dataType: dateTime
+		formatString: yyyy-mm-dd hh:nn
+		lineageTag: d15ae00f-8f6e-59f7-ad62-9cca0fe8ea6e
+		summarizeBy: none
+		sourceColumn: Rejected At
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	partition 'Rejected Rows' = m
+		mode: import
+		source =
+				let
+					Source = Csv.Document(File.Contents(DataFolder & "fact_finance_rejected.csv"), [Delimiter = ",", Encoding = 65001, QuoteStyle = QuoteStyle.Csv]),
+					Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars = true]),
+					// empty CSV fields -> null, so typed conversion does not raise errors
+					Nulls = Table.TransformColumns(Promoted, List.Transform(Table.ColumnNames(Promoted), each {_, (v) => if v = "" then null else v})),
+					// en-US culture: decimal point is '.', independent of the Windows locale
+					Typed = Table.TransformColumnTypes(Nulls, {
+						{"scenario", type text},
+						{"source_table", type text},
+						{"record_key", type text},
+						{"document_ref", type text},
+						{"posting_date", type datetime},
+						{"period", type text},
+						{"account_code", type text},
+						{"cost_centre_code", type text},
+						{"amount", Currency.Type},
+						{"reject_check_id", type text},
+						{"reject_reason", type text},
+						{"all_check_ids", type text},
+						{"rejected_at", type datetime}
+					}, "en-US"),
+					Renamed = Table.RenameColumns(Typed, {
+						{"scenario", "Scenario"},
+						{"source_table", "Source Table"},
+						{"record_key", "Record Key"},
+						{"document_ref", "Document Ref"},
+						{"posting_date", "Posting Date"},
+						{"period", "Period"},
+						{"account_code", "Account Code"},
+						{"cost_centre_code", "Cost Centre Code"},
+						{"amount", "Amount"},
+						{"reject_check_id", "Check ID"},
+						{"reject_reason", "Reject Reason"},
+						{"all_check_ids", "All Check IDs"},
+						{"rejected_at", "Rejected At"}
+					})
+				in
+					Renamed
+
+	annotation PBI_ResultType = Table

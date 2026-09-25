@@ -1,0 +1,21 @@
+model Model
+	culture: en-US
+	defaultPowerBIDataSourceVersion: powerBI_V3
+	discourageImplicitMeasures
+	sourceQueryCulture: en-US
+	dataAccessOptions
+		legacyRedirects
+		returnErrorValuesAsNull
+
+annotation PBI_QueryOrder = ["DataFolder", "Date", "Account", "Cost Centre", "Scenario", "Fact Finance", "Rejected Rows", "DQ Results", "_Measures"]
+
+annotation __PBI_TimeIntelligenceEnabled = 0
+
+ref table Date
+ref table Account
+ref table 'Cost Centre'
+ref table Scenario
+ref table 'Fact Finance'
+ref table 'Rejected Rows'
+ref table 'DQ Results'
+ref table _Measures
